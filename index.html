@@ -23,6 +23,13 @@
     .form-group {
       margin-bottom: 1rem;
     }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+    }
+    .form-row .form-group {
+      flex: 1;
+    }
     label {
       display: block;
       margin-bottom: 0.5rem;
@@ -66,36 +73,48 @@
   </header>
   <div class="container">
     <form id="orderForm">
-      <div class="form-group">
-        <label for="client">اسم العميل أو الرقم</label>
-        <input type="text" id="client" name="client" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="client">اسم العميل أو الرقم</label>
+          <input type="text" id="client" />
+        </div>
+        <div class="form-group">
+          <label for="store">اسم المحل</label>
+          <input type="text" id="store" />
+        </div>
       </div>
-      <div class="form-group">
-        <label for="store">اسم المحل</label>
-        <input type="text" id="store" name="store" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="order">تفاصيل الطلب</label>
+          <textarea id="order"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="address">العنوان</label>
+          <input type="text" id="address" />
+        </div>
       </div>
-      <div class="form-group">
-        <label for="order">تفاصيل الطلب</label>
-        <textarea id="order" name="order"></textarea>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amount">المبلغ</label>
+          <input type="number" id="amount" />
+        </div>
+        <div class="form-group">
+          <label for="delivery">سعر التوصيل</label>
+          <input type="number" id="delivery" />
+        </div>
       </div>
-      <div class="form-group">
-        <label for="address">العنوان</label>
-        <input type="text" id="address" name="address" />
-      </div>
-      <div class="form-group">
-        <label for="amount">المبلغ</label>
-        <input type="number" id="amount" name="amount" />
-      </div>
-      <div class="form-group">
-        <label for="delivery">سعر التوصيل</label>
-        <input type="number" id="delivery" name="delivery" />
-      </div>
+
       <div class="form-group">
         <label for="notes">ملاحظات</label>
-        <textarea id="notes" name="notes"></textarea>
+        <textarea id="notes"></textarea>
       </div>
+
       <button type="button" id="submitBtn" onclick="addOrder()">إضافة الأوردر</button>
       <button type="button" onclick="downloadCSV()">تحميل الشيفت (CSV)</button>
+      <button type="button" onclick="clearAll()">مسح الكل</button>
     </form>
 
     <table>
@@ -120,6 +139,34 @@
   <script>
     let editingRow = null;
 
+    function saveToLocalStorage() {
+      const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
+      const data = rows.map(row => {
+        return Array.from(row.querySelectorAll("td")).slice(0, 9).map(td => td.textContent);
+      });
+      localStorage.setItem("ordersData", JSON.stringify(data));
+    }
+
+    function loadFromLocalStorage() {
+      const data = JSON.parse(localStorage.getItem("ordersData")) || [];
+      data.forEach(values => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${values[0]}</td>
+          <td>${values[1]}</td>
+          <td>${values[2]}</td>
+          <td>${values[3]}</td>
+          <td>${values[4]}</td>
+          <td>${values[5]}</td>
+          <td>${values[6]}</td>
+          <td>${values[7]}</td>
+          <td>${values[8]}</td>
+          <td><button onclick="editOrder(this)">تعديل</button></td>
+        `;
+        document.getElementById('ordersTable').appendChild(row);
+      });
+    }
+
     function addOrder() {
       const client = document.getElementById('client').value || '';
       const store = document.getElementById('store').value || '';
@@ -142,10 +189,9 @@
         cells[6].textContent = commission + '%';
         cells[7].textContent = commissionValue.toFixed(2);
         cells[8].textContent = notes;
-        document.getElementById('submitBtn').textContent = 'إضافة الأوردر';
         editingRow = null;
+        document.getElementById('submitBtn').textContent = 'إضافة الأوردر';
       } else {
-        const table = document.getElementById('ordersTable');
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${client}</td>
@@ -159,10 +205,11 @@
           <td>${notes}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
-        table.appendChild(row);
+        document.getElementById('ordersTable').appendChild(row);
       }
 
       document.getElementById('orderForm').reset();
+      saveToLocalStorage();
     }
 
     function editOrder(button) {
@@ -177,6 +224,11 @@
       document.getElementById('notes').value = cells[8].textContent;
       editingRow = row;
       document.getElementById('submitBtn').textContent = 'تحديث الأوردر';
+    }
+
+    function clearAll() {
+      localStorage.removeItem('ordersData');
+      document.getElementById('ordersTable').innerHTML = '';
     }
 
     function downloadCSV() {
@@ -232,6 +284,8 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    window.onload = loadFromLocalStorage;
   </script>
 </body>
 </html>
