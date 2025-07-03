@@ -71,45 +71,23 @@
   <header>
     <h1>نظام أوردرات اخدمني</h1>
   </header>
+
   <div class="container">
     <form id="orderForm">
-
       <div class="form-row">
-        <div class="form-group">
-          <label for="client">اسم العميل أو الرقم</label>
-          <input type="text" id="client" />
-        </div>
         <div class="form-group">
           <label for="store">اسم المحل</label>
           <input type="text" id="store" />
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="order">تفاصيل الطلب</label>
-          <textarea id="order"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="address">العنوان</label>
-          <input type="text" id="address" />
-        </div>
-      </div>
-
-      <div class="form-row">
         <div class="form-group">
           <label for="amount">المبلغ</label>
           <input type="number" id="amount" />
         </div>
-        <div class="form-group">
-          <label for="delivery">سعر التوصيل</label>
-          <input type="number" id="delivery" />
-        </div>
       </div>
 
       <div class="form-group">
-        <label for="notes">ملاحظات</label>
-        <textarea id="notes"></textarea>
+        <label for="order">تفاصيل الطلب</label>
+        <textarea id="order"></textarea>
       </div>
 
       <button type="button" id="submitBtn" onclick="addOrder()">إضافة الأوردر</button>
@@ -120,15 +98,11 @@
     <table>
       <thead>
         <tr>
-          <th>العميل</th>
           <th>المحل</th>
-          <th>الطلب</th>
-          <th>العنوان</th>
           <th>المبلغ</th>
-          <th>سعر التوصيل</th>
+          <th>تفاصيل الطلب</th>
           <th>النسبة</th>
           <th>العمولة</th>
-          <th>ملاحظات</th>
           <th>تعديل</th>
         </tr>
       </thead>
@@ -142,7 +116,7 @@
     function saveToLocalStorage() {
       const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
       const data = rows.map(row => {
-        return Array.from(row.querySelectorAll("td")).slice(0, 9).map(td => td.textContent);
+        return Array.from(row.querySelectorAll("td")).slice(0, 5).map(td => td.textContent);
       });
       localStorage.setItem("ordersData", JSON.stringify(data));
     }
@@ -157,10 +131,6 @@
           <td>${values[2]}</td>
           <td>${values[3]}</td>
           <td>${values[4]}</td>
-          <td>${values[5]}</td>
-          <td>${values[6]}</td>
-          <td>${values[7]}</td>
-          <td>${values[8]}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(row);
@@ -168,41 +138,29 @@
     }
 
     function addOrder() {
-      const client = document.getElementById('client').value || '';
       const store = document.getElementById('store').value || '';
-      const order = document.getElementById('order').value || '';
-      const address = document.getElementById('address').value || '';
       const amount = parseFloat(document.getElementById('amount').value) || 0;
-      const delivery = parseFloat(document.getElementById('delivery').value) || 0;
-      const notes = document.getElementById('notes').value || '';
+      const order = document.getElementById('order').value || '';
       const commission = 5;
       const commissionValue = amount * commission / 100;
 
       if (editingRow) {
         const cells = editingRow.querySelectorAll('td');
-        cells[0].textContent = client;
-        cells[1].textContent = store;
+        cells[0].textContent = store;
+        cells[1].textContent = amount.toFixed(2);
         cells[2].textContent = order;
-        cells[3].textContent = address;
-        cells[4].textContent = amount.toFixed(2);
-        cells[5].textContent = delivery.toFixed(2);
-        cells[6].textContent = commission + '%';
-        cells[7].textContent = commissionValue.toFixed(2);
-        cells[8].textContent = notes;
+        cells[3].textContent = commission + '%';
+        cells[4].textContent = commissionValue.toFixed(2);
         editingRow = null;
         document.getElementById('submitBtn').textContent = 'إضافة الأوردر';
       } else {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${client}</td>
           <td>${store}</td>
-          <td>${order}</td>
-          <td>${address}</td>
           <td>${amount.toFixed(2)}</td>
-          <td>${delivery.toFixed(2)}</td>
+          <td>${order}</td>
           <td>${commission}%</td>
           <td>${commissionValue.toFixed(2)}</td>
-          <td>${notes}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(row);
@@ -215,13 +173,9 @@
     function editOrder(button) {
       const row = button.closest('tr');
       const cells = row.querySelectorAll('td');
-      document.getElementById('client').value = cells[0].textContent;
-      document.getElementById('store').value = cells[1].textContent;
+      document.getElementById('store').value = cells[0].textContent;
+      document.getElementById('amount').value = cells[1].textContent;
       document.getElementById('order').value = cells[2].textContent;
-      document.getElementById('address').value = cells[3].textContent;
-      document.getElementById('amount').value = cells[4].textContent;
-      document.getElementById('delivery').value = cells[5].textContent;
-      document.getElementById('notes').value = cells[8].textContent;
       editingRow = row;
       document.getElementById('submitBtn').textContent = 'تحديث الأوردر';
     }
@@ -232,7 +186,7 @@
     }
 
     function downloadCSV() {
-      const headers = ["اسم العميل", "اسم المحل", "تفاصيل الطلب", "العنوان", "المبلغ", "سعر التوصيل", "النسبة", "العمولة", "ملاحظات"];
+      const headers = ["اسم المحل", "المبلغ", "تفاصيل الطلب", "النسبة", "العمولة"];
       const rows = [];
       const storeData = {};
       let totalOrders = 0;
@@ -241,16 +195,16 @@
       const tr = document.querySelectorAll("#ordersTable tr");
       tr.forEach(row => {
         const cells = row.querySelectorAll("td");
-        if (cells.length >= 9) {
+        if (cells.length >= 5) {
           const rowData = [];
-          for (let i = 0; i < 9; i++) {
+          for (let i = 0; i < 5; i++) {
             rowData.push(cells[i].textContent);
           }
           rows.push(rowData);
 
-          const store = cells[1].textContent;
-          const amount = parseFloat(cells[4].textContent) || 0;
-          const commission = parseFloat(cells[7].textContent) || 0;
+          const store = cells[0].textContent;
+          const amount = parseFloat(cells[1].textContent) || 0;
+          const commission = parseFloat(cells[4].textContent) || 0;
 
           if (!storeData[store]) {
             storeData[store] = { count: 0, total: 0, commission: 0 };
@@ -272,7 +226,7 @@
       }
       report.push(["---", "---", "---", "---"]);
       report.push(["الإجمالي", totalOrders, "", totalCommission.toFixed(2)]);
-      report.push([""]); // فاصلة
+      report.push([""]);
       report.push(headers);
       const fullData = report.concat(rows);
       const csvContent = "\uFEFF" + fullData.map(e => e.join(",")).join("\n");
