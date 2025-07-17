@@ -19,8 +19,8 @@
     }
     .container { padding: 1rem; }
     .form-group { margin-bottom: 1rem; }
-    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .form-row .form-group { flex: 1; min-width: 200px; }
+    .form-row { display: flex; gap: 1rem; }
+    .form-row .form-group { flex: 1; }
     label { display: block; margin-bottom: 0.5rem; }
     input, textarea, select {
       width: 100%;
@@ -60,6 +60,7 @@
   <header><h1>نظام أوردرات اخدمني</h1></header>
   <div class="container">
     <form id="orderForm">
+      <!-- صف واحد: اختيار المحل + المبلغ -->
       <div class="form-row">
         <div class="form-group">
           <label for="store">اسم المحل</label>
@@ -79,10 +80,11 @@
         </div>
         <div class="form-group">
           <label for="amount">المبلغ</label>
-          <input type="number" id="amount" placeholder="0.00" />
+          <input type="number" id="amount" placeholder="0.00"/>
         </div>
       </div>
 
+      <!-- صف منفصل لتفاصيل الطلب -->
       <div class="form-group">
         <label for="order">تفاصيل الطلب</label>
         <textarea id="order" rows="3"></textarea>
@@ -91,15 +93,16 @@
       <button type="button" id="submitBtn" onclick="addOrder()">إضافة الأوردر</button>
       <button type="button" onclick="downloadCSV()">تحميل الشيفت (CSV)</button>
       <button type="button" onclick="clearAll()">مسح الكل</button>
-      <button type="button" onclick="closeShift()">إغلاق الشيفت</button>
     </form>
 
+    <!-- جدول عرض الطلبات -->
     <table>
       <thead>
         <tr>
           <th>المحل</th>
           <th>المبلغ</th>
           <th>تفاصيل الطلب</th>
+          <th>النسبة</th>
           <th>العمولة</th>
           <th>تاريخ الأوردر</th>
           <th>تعديل</th>
@@ -110,13 +113,12 @@
   </div>
 
   <script>
-    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxRBXTODoyvhusq9QwWHhXVYbgobJo0ZhMnAGuHUwXJ8Il6Mn_6Kn01-Sn_pGRTQtpOCA/exec";
     let editingRow = null;
 
     function saveToLocalStorage() {
       const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
       const data = rows.map(row =>
-        Array.from(row.querySelectorAll("td")).slice(0,5).map(td => td.textContent)
+        Array.from(row.querySelectorAll("td")).slice(0,6).map(td => td.textContent)
       );
       localStorage.setItem("ordersData", JSON.stringify(data));
     }
@@ -131,6 +133,7 @@
           <td>${vals[2]}</td>
           <td>${vals[3]}</td>
           <td>${vals[4]}</td>
+          <td>${vals[5]}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(row);
@@ -141,27 +144,20 @@
       const store = document.getElementById('store').value;
       const amount = parseFloat(document.getElementById('amount').value) || 0;
       const order = document.getElementById('order').value.trim();
-      const commissionRate = 5;
-      const commissionValue = (amount * commissionRate / 100).toFixed(2);
-      const orderDate = new Date().toLocaleString('ar-EG');
+      const commission = 5;
+      const commissionValue = (amount * commission / 100).toFixed(2);
+      const orderDate = new Date().toLocaleString('ar-EG'); // تاريخ الأوردر
 
       if (!store) return alert("اختر اسم المحل أولاً");
-
-      const rowData = {
-        store,
-        amount: amount.toFixed(2),
-        details: order,
-        commission: commissionValue,
-        date: orderDate
-      };
 
       if (editingRow) {
         const cells = editingRow.querySelectorAll('td');
         cells[0].textContent = store;
         cells[1].textContent = amount.toFixed(2);
         cells[2].textContent = order;
-        cells[3].textContent = commissionValue;
-        cells[4].textContent = orderDate;
+        cells[3].textContent = commission + '%';
+        cells[4].textContent = commissionValue;
+        cells[5].textContent = orderDate;
         editingRow = null;
         submitBtn.textContent = 'إضافة الأوردر';
       } else {
@@ -170,21 +166,13 @@
           <td>${store}</td>
           <td>${amount.toFixed(2)}</td>
           <td>${order}</td>
+          <td>${commission}%</td>
           <td>${commissionValue}</td>
           <td>${orderDate}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(tr);
       }
-
-      fetch(GOOGLE_SHEET_URL, {
-        method: 'POST',
-        body: JSON.stringify(rowData),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.text())
-      .then(res => console.log("تم الإرسال إلى الشيت:", res))
-      .catch(err => console.error("فشل الإرسال:", err));
 
       document.getElementById('orderForm').reset();
       saveToLocalStorage();
@@ -205,45 +193,16 @@
       document.getElementById('ordersTable').innerHTML = '';
     }
 
-    function closeShift() {
-      const now = new Date().toLocaleString('ar-EG');
-      const separator = {
-        store: "=== نهاية الشيفت ===",
-        amount: "",
-        details: "",
-        commission: "",
-        date: now
-      };
-
-      fetch(GOOGLE_SHEET_URL, {
-        method: 'POST',
-        body: JSON.stringify(separator),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.text())
-      .then(res => {
-        alert("تم إغلاق الشيفت.");
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td colspan="5" style="text-align:center; font-weight:bold;">${separator.store} - ${separator.date}</td>
-          <td></td>
-        `;
-        document.getElementById('ordersTable').appendChild(tr);
-      })
-      .catch(err => alert("خطأ أثناء إغلاق الشيفت: " + err));
-    }
-
     function downloadCSV() {
-      const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","العمولة","تاريخ الأوردر"];
+      const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
       const rows = [], storeData = {}, totals = {count:0, comm:0};
 
       document.querySelectorAll("#ordersTable tr").forEach(r => {
         const cells = r.querySelectorAll('td');
-        if (cells.length < 5) return;
-        const rowVals = Array.from(cells).slice(0,5).map(td => td.textContent);
+        if (cells.length < 6) return;
+        const rowVals = Array.from(cells).slice(0,6).map(td => td.textContent);
         rows.push(rowVals);
-        const [st, am, , commVal] = rowVals;
-        if (!st || st.includes("نهاية الشيفت")) return;
+        const [st, am, , , commVal] = rowVals;
         totals.count++;
         totals.comm += parseFloat(commVal);
         storeData[st] = storeData[st] || {count:0, total:0, commission:0};
