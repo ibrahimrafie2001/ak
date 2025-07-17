@@ -74,6 +74,8 @@
             <option>ماتيو</option>
             <option>علي كبده</option>
             <option>بيتزا حمزه</option>
+            <option>برجر ع الفحم</option>
+            <option>الرشيدي</option>
           </select>
         </div>
         <div class="form-group">
@@ -102,6 +104,7 @@
           <th>تفاصيل الطلب</th>
           <th>النسبة</th>
           <th>العمولة</th>
+          <th>تاريخ الأوردر</th>
           <th>تعديل</th>
         </tr>
       </thead>
@@ -115,7 +118,7 @@
     function saveToLocalStorage() {
       const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
       const data = rows.map(row =>
-        Array.from(row.querySelectorAll("td")).slice(0,5).map(td => td.textContent)
+        Array.from(row.querySelectorAll("td")).slice(0,6).map(td => td.textContent)
       );
       localStorage.setItem("ordersData", JSON.stringify(data));
     }
@@ -130,6 +133,7 @@
           <td>${vals[2]}</td>
           <td>${vals[3]}</td>
           <td>${vals[4]}</td>
+          <td>${vals[5]}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(row);
@@ -142,6 +146,7 @@
       const order = document.getElementById('order').value.trim();
       const commission = 5;
       const commissionValue = (amount * commission / 100).toFixed(2);
+      const orderDate = new Date().toLocaleString('ar-EG'); // تاريخ الأوردر
 
       if (!store) return alert("اختر اسم المحل أولاً");
 
@@ -152,6 +157,7 @@
         cells[2].textContent = order;
         cells[3].textContent = commission + '%';
         cells[4].textContent = commissionValue;
+        cells[5].textContent = orderDate;
         editingRow = null;
         submitBtn.textContent = 'إضافة الأوردر';
       } else {
@@ -162,6 +168,7 @@
           <td>${order}</td>
           <td>${commission}%</td>
           <td>${commissionValue}</td>
+          <td>${orderDate}</td>
           <td><button onclick="editOrder(this)">تعديل</button></td>
         `;
         document.getElementById('ordersTable').appendChild(tr);
@@ -187,13 +194,13 @@
     }
 
     function downloadCSV() {
-      const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة"];
+      const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
       const rows = [], storeData = {}, totals = {count:0, comm:0};
 
       document.querySelectorAll("#ordersTable tr").forEach(r => {
         const cells = r.querySelectorAll('td');
-        if (cells.length < 5) return;
-        const rowVals = Array.from(cells).slice(0,5).map(td => td.textContent);
+        if (cells.length < 6) return;
+        const rowVals = Array.from(cells).slice(0,6).map(td => td.textContent);
         rows.push(rowVals);
         const [st, am, , , commVal] = rowVals;
         totals.count++;
