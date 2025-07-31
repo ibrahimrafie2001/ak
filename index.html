@@ -60,7 +60,6 @@
   <header><h1>نظام أوردرات اخدمني</h1></header>
   <div class="container">
     <form id="orderForm">
-      <!-- صف واحد: اختيار المحل + المبلغ -->
       <div class="form-row">
         <div class="form-group">
           <label for="store">اسم المحل</label>
@@ -84,7 +83,6 @@
         </div>
       </div>
 
-      <!-- صف منفصل لتفاصيل الطلب -->
       <div class="form-group">
         <label for="order">تفاصيل الطلب</label>
         <textarea id="order" rows="3"></textarea>
@@ -95,7 +93,6 @@
       <button type="button" onclick="clearAll()">مسح الكل</button>
     </form>
 
-    <!-- جدول عرض الطلبات -->
     <table>
       <thead>
         <tr>
@@ -146,7 +143,7 @@
       const order = document.getElementById('order').value.trim();
       const commission = 5;
       const commissionValue = (amount * commission / 100).toFixed(2);
-      const orderDate = new Date().toLocaleString('ar-EG'); // تاريخ الأوردر
+      const orderDate = new Date().toLocaleString('ar-EG');
 
       if (!store) return alert("اختر اسم المحل أولاً");
 
@@ -196,6 +193,7 @@
     function downloadCSV() {
       const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
       const rows = [], storeData = {}, totals = {count:0, comm:0};
+      const hamzaOrders = [];
 
       document.querySelectorAll("#ordersTable tr").forEach(r => {
         const cells = r.querySelectorAll('td');
@@ -209,12 +207,27 @@
         storeData[st].count++;
         storeData[st].total += parseFloat(am);
         storeData[st].commission += parseFloat(commVal);
+
+        // Check for "بيتزا حمزه"
+        if (st === "بيتزا حمزه") {
+          hamzaOrders.push(rowVals.slice(0, 5)); // بدون التاريخ
+        }
       });
 
       const report = [["تقرير الشيفت"],["اسم المحل","عدد الأوردرات","إجمالي المبلغ","إجمالي العمولة"]];
-      Object.entries(storeData).forEach(([s,v]) => report.push([s, v.count, v.total.toFixed(2), v.commission.toFixed(2)]));
+      Object.entries(storeData).forEach(([s,v]) =>
+        report.push([s, v.count, v.total.toFixed(2), v.commission.toFixed(2)])
+      );
       report.push(["---","---","---","---"],["الإجمالي", totals.count, "", totals.comm.toFixed(2)],[""], headers);
-      const data = "\uFEFF"+report.concat(rows).map(r=>r.join(",")).join("\n");
+      report.push(...rows);
+
+      // إذا فيه أوردرات لـ بيتزا حمزه، نضيف جدول خاص
+      if (hamzaOrders.length > 0) {
+        report.push([""], ["أوردرات بيتزا حمزه"], ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة"]);
+        report.push(...hamzaOrders);
+      }
+
+      const data = "\uFEFF" + report.map(r => r.join(",")).join("\n");
       const blob = new Blob([data], {type:"text/csv;charset=UTF-8"});
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
