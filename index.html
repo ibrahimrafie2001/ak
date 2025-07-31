@@ -208,7 +208,6 @@
         storeData[st].total += parseFloat(am);
         storeData[st].commission += parseFloat(commVal);
 
-        // Check for "بيتزا حمزه"
         if (st === "بيتزا حمزه") {
           hamzaOrders.push(rowVals.slice(0, 5)); // بدون التاريخ
         }
@@ -221,13 +220,12 @@
       report.push(["---","---","---","---"],["الإجمالي", totals.count, "", totals.comm.toFixed(2)],[""], headers);
       report.push(...rows);
 
-      // إذا فيه أوردرات لـ بيتزا حمزه، نضيف جدول خاص
       if (hamzaOrders.length > 0) {
         report.push([""], ["أوردرات بيتزا حمزه"], ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة"]);
         report.push(...hamzaOrders);
       }
 
-      const data = "\uFEFF" + report.map(r => r.join(",")).join("\n");
+      const data = "\uFEFF" + report.map(r => r.join(";")).join("\n"); // <-- تم التعديل هنا
       const blob = new Blob([data], {type:"text/csv;charset=UTF-8"});
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
