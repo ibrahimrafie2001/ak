@@ -3,105 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>نسبة اخدمني</title>
-
-  <!-- ✅ استدعاء خط Cairo -->
+  <title>نسبة اخدمني - لوحة التحكم</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #ff6600;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      padding: 1rem;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      text-align: center;
-      flex: 1;
-    }
-
-    /* ✅ مكان اللوجو في اليمين */
-    .logo {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .logo img {
-      height: 100px;
-      width: auto;
-    }
-
+    body { font-family: 'Cairo', sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; }
+    
+    /* تنسيقات الشاشة العادية */
+    header { background-color: #ff6600; color: white; display: flex; align-items: center; justify-content: center; position: relative; padding: 1rem; }
+    header h1 { margin: 0; font-size: 1.6rem; text-align: center; flex: 1; }
+    .logo { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); }
+    .logo img { height: 100px; width: auto; }
+    
     .container { padding: 1rem; }
     .form-group { margin-bottom: 1rem; }
     .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
     .form-row .form-group { flex: 1; }
     label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    input, textarea, select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; font-family: 'Cairo', sans-serif; }
+    
+    .btn-group { margin-top: 1rem; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 600; transition: 0.3s; }
+    
+    /* ألوان الأزرار */
+    .btn-add { background-color: #ff6600; }
+    .btn-add:hover { background-color: #e65c00; }
+    .btn-csv { background-color: #28a745; }
+    .btn-report { background-color: #17a2b8; }
+    .btn-clear { background-color: #dc3545; }
 
-    input, textarea, select {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-family: 'Cairo', sans-serif;
+    /* الجداول */
+    table { width: 100%; border-collapse: collapse; margin-top: 2rem; background: white; font-family: 'Cairo', sans-serif; }
+    th, td { padding: 0.75rem; border: 1px solid #ddd; text-align: center; }
+    th { background-color: #ff6600; color: white; }
+
+    /* --- تنسيقات المودال --- */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-content {
+      background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .close-modal { background: none; color: #333; font-size: 1.5rem; padding: 0; cursor: pointer; }
+    
+    /* تنسيق خاص لجدول التقرير */
+    .summary-table th { background-color: #333; } 
+    .total-row { font-weight: bold; background-color: #e9ecef; }
+
+    .modal-actions {
+        margin-top: 20px; 
+        display: flex; 
+        gap: 10px; 
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
-    button {
-      background-color: #ff6600;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 1rem;
-      margin-left: 0.5rem;
-      font-family: 'Cairo', sans-serif;
-      font-weight: 600;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background-color: #e65c00;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2rem;
-      background: white;
-      font-family: 'Cairo', sans-serif;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    th {
-      background-color: #ff6600;
-      color: white;
+    /* --- تنسيقات الطباعة (عند الضغط على طباعة أو Ctrl+P) --- */
+    @media print {
+        body * { visibility: hidden; } /* إخفاء كل شيء */
+        #reportModal, #reportModal * { visibility: visible; } /* إظهار المودال فقط */
+        #reportModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: none; }
+        .modal-content { box-shadow: none; border: none; width: 100%; max-width: 100%; }
+        .modal-actions, .close-modal { display: none !important; } /* إخفاء الأزرار عند الطباعة */
     }
   </style>
 </head>
 <body>
+
   <header>
     <h1>نسبة اخدمني</h1>
-    <!-- ✅ اللوجو في اليمين -->
     <div class="logo">
       <img src="490513000_618868401151095_4901961115467337186_n-removebg-preview.png" alt="لوجو اخدمني" />
     </div>
@@ -126,7 +99,6 @@
             <option>برجر ع الفحم</option>
             <option>الرشيدي</option>
             <option>مقلة الطيب</option>
-            <option>حلواني السلام</option>
             <option>حلواني لادورية</option>
             <option>ماركت عبد العظيم</option>
             <option>ديعا ال ف القيساريه</option>
@@ -147,9 +119,12 @@
         <textarea id="order" rows="3"></textarea>
       </div>
 
-      <button type="button" id="submitBtn" onclick="addOrder()">إضافة الأوردر</button>
-      <button type="button" onclick="downloadCSV()">تحميل الشيفت (CSV)</button>
-      <button type="button" onclick="clearAll()">مسح الكل</button>
+      <div class="btn-group">
+        <button type="button" id="submitBtn" class="btn-add" onclick="addOrder()">إضافة الأوردر</button>
+        <button type="button" class="btn-report" onclick="showDailyReport()">📊 التقرير اليومي</button>
+        <button type="button" class="btn-csv" onclick="downloadCSV()">📥 تحميل الشيفت كامل</button>
+        <button type="button" class="btn-clear" onclick="clearAll()">❌ مسح الكل</button>
+      </div>
     </form>
 
     <table>
@@ -168,12 +143,43 @@
     </table>
   </div>
 
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>ملخص الشيفت اليومي</h2>
+        <button class="close-modal" onclick="closeReport()">×</button>
+      </div>
+      
+      <table class="summary-table" id="summaryTableElement">
+        <thead>
+          <tr>
+            <th>اسم المحل</th>
+            <th>عدد الأوردرات</th>
+            <th>إجمالي المبلغ</th>
+            <th>إجمالي النسبة</th>
+          </tr>
+        </thead>
+        <tbody id="reportBody"></tbody>
+        <tfoot>
+            <tr class="total-row" id="grandTotalRow"></tr>
+        </tfoot>
+      </table>
+
+      <div class="modal-actions">
+         <button onclick="copyReportText()" style="background:#25D366;">نسخ واتساب 📱</button>
+         <button onclick="downloadSummaryCSV()" style="background:#0d6efd;">تحميل Excel 📥</button>
+         <button onclick="window.print()" style="background:#6c757d;">طباعة / PDF 🖨️</button>
+         <button onclick="closeReport()" style="background:#333;">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let editingRow = null;
 
     function saveToLocalStorage() {
       const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
-      const data = rows.map(row =>
+      const data = rows.map(row => 
         Array.from(row.querySelectorAll("td")).slice(0,6).map(td => td.textContent)
       );
       localStorage.setItem("ordersData", JSON.stringify(data));
@@ -181,26 +187,28 @@
 
     function loadFromLocalStorage() {
       const data = JSON.parse(localStorage.getItem("ordersData")) || [];
-      data.forEach(vals => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
+      data.forEach(vals => insertRow(vals));
+    }
+
+    function insertRow(vals) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
           <td>${vals[0]}</td>
           <td>${vals[1]}</td>
           <td>${vals[2]}</td>
           <td>${vals[3]}</td>
           <td>${vals[4]}</td>
           <td>${vals[5]}</td>
-          <td><button onclick="editOrder(this)">تعديل</button></td>
+          <td><button onclick="editOrder(this)" style="padding:5px 10px; font-size:12px; background:#444; color:#fff; border:none; border-radius:3px; cursor:pointer;">تعديل</button></td>
         `;
-        document.getElementById('ordersTable').appendChild(row);
-      });
+        document.getElementById('ordersTable').appendChild(tr);
     }
 
     function addOrder() {
       const store = document.getElementById('store').value;
       const amount = parseFloat(document.getElementById('amount').value) || 0;
       const order = document.getElementById('order').value.trim();
-      const commission = 5;
+      const commission = 5; 
       const commissionValue = (amount * commission / 100).toFixed(2);
       const orderDate = new Date().toLocaleString('ar-EG');
 
@@ -215,19 +223,9 @@
         cells[4].textContent = commissionValue;
         cells[5].textContent = orderDate;
         editingRow = null;
-        submitBtn.textContent = 'إضافة الأوردر';
+        document.getElementById('submitBtn').textContent = 'إضافة الأوردر';
       } else {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${store}</td>
-          <td>${amount.toFixed(2)}</td>
-          <td>${order}</td>
-          <td>${commission}%</td>
-          <td>${commissionValue}</td>
-          <td>${orderDate}</td>
-          <td><button onclick="editOrder(this)">تعديل</button></td>
-        `;
-        document.getElementById('ordersTable').appendChild(tr);
+        insertRow([store, amount.toFixed(2), order, commission+'%', commissionValue, orderDate]);
       }
 
       document.getElementById('orderForm').reset();
@@ -241,55 +239,136 @@
       document.getElementById('amount').value = cells[1].textContent;
       document.getElementById('order').value = cells[2].textContent;
       editingRow = row;
-      submitBtn.textContent = 'تحديث الأوردر';
+      document.getElementById('submitBtn').textContent = 'تحديث الأوردر';
     }
 
     function clearAll() {
-      localStorage.removeItem("ordersData");
-      document.getElementById('ordersTable').innerHTML = '';
+      if(confirm('هل أنت متأكد من مسح كل البيانات؟')) {
+        localStorage.removeItem("ordersData");
+        document.getElementById('ordersTable').innerHTML = '';
+      }
     }
 
+    // --- دالة تحميل الشيفت الكامل (Raw Data) ---
     function downloadCSV() {
-      const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
-      const rows = [];
-      const storeData = {};
-      const totals = {count:0, comm:0};
+        const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
+        const rows = [];
+        document.querySelectorAll("#ordersTable tr").forEach(r => {
+            const cells = r.querySelectorAll('td');
+            if (cells.length < 6) return;
+            rows.push(Array.from(cells).slice(0,6).map(td => td.textContent));
+        });
+        generateAndDownloadCSV(headers, rows, "shift_full_details.csv");
+    }
 
-      document.querySelectorAll("#ordersTable tr").forEach(r => {
-        const cells = r.querySelectorAll('td');
-        if (cells.length < 6) return;
-        const rowVals = Array.from(cells).slice(0,6).map(td => td.textContent);
-        rows.push(rowVals);
-        const [st, am, , , commVal] = rowVals;
-        totals.count++;
-        totals.comm += parseFloat(commVal);
-        storeData[st] = storeData[st] || {orders:[], count:0, total:0, commission:0};
-        storeData[st].orders.push(rowVals);
-        storeData[st].count++;
-        storeData[st].total += parseFloat(am);
-        storeData[st].commission += parseFloat(commVal);
-      });
+    // --- دالة تحميل التقرير الملخص (Summary Data) ---
+    function downloadSummaryCSV() {
+        const headers = ["اسم المحل", "عدد الأوردرات", "إجمالي المبلغ", "إجمالي النسبة"];
+        const rows = [];
+        
+        // جلب الصفوف من جدول التقرير
+        document.querySelectorAll("#reportBody tr").forEach(r => {
+            const cells = r.querySelectorAll('td');
+            rows.push(Array.from(cells).map(td => td.textContent));
+        });
+        
+        // إضافة صف الإجمالي
+        const totalCells = document.querySelectorAll("#grandTotalRow td");
+        if(totalCells.length > 0) {
+             rows.push(["---","---","---","---"]);
+             rows.push(Array.from(totalCells).map(td => td.textContent));
+        }
 
-      const report = [["تقرير الشيفت"],["اسم المحل","عدد الأوردرات","إجمالي المبلغ","إجمالي العمولة"]];
-      Object.entries(storeData).forEach(([s,v]) =>
-        report.push([s, v.count, v.total.toFixed(2), v.commission.toFixed(2)])
-      );
-      report.push(["---","---","---","---"],["الإجمالي", totals.count, "", totals.comm.toFixed(2)],[""]);
+        generateAndDownloadCSV(headers, rows, "daily_summary_report.csv");
+    }
 
-      Object.entries(storeData).forEach(([s,v]) => {
-        report.push([""], [`أوردرات ${s}`]);
-        report.push(headers);
-        v.orders.forEach(o => report.push(o));
-      });
+    // --- دالة مساعدة لإنشاء ملف CSV ---
+    function generateAndDownloadCSV(headers, rows, filename) {
+        if(rows.length === 0) return alert("لا توجد بيانات للتحميل");
+        const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
-      const data = "\uFEFF" + report.map(r => r.join(";")).join("\n");
-      const blob = new Blob([data], {type:"text/csv;charset=UTF-8"});
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = "orders_shift_report.csv";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    // --- منطق التقرير والعرض ---
+    function showDailyReport() {
+        const reportData = {};
+        let grandTotalCount = 0;
+        let grandTotalAmount = 0;
+        let grandTotalCommission = 0;
+
+        const rows = document.querySelectorAll("#ordersTable tr");
+        if (rows.length === 0) return alert("لا توجد بيانات لعرض التقرير");
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const storeName = cells[0].textContent;
+            const amount = parseFloat(cells[1].textContent) || 0;
+            const commissionVal = parseFloat(cells[4].textContent) || 0;
+
+            if (!reportData[storeName]) {
+                reportData[storeName] = { count: 0, totalAmount: 0, totalCommission: 0 };
+            }
+
+            reportData[storeName].count += 1;
+            reportData[storeName].totalAmount += amount;
+            reportData[storeName].totalCommission += commissionVal;
+
+            grandTotalCount++;
+            grandTotalAmount += amount;
+            grandTotalCommission += commissionVal;
+        });
+
+        const reportBody = document.getElementById('reportBody');
+        reportBody.innerHTML = ''; 
+
+        Object.keys(reportData).forEach(store => {
+            const data = reportData[store];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${store}</td>
+                <td>${data.count}</td>
+                <td>${data.totalAmount.toFixed(2)}</td>
+                <td style="font-weight:bold; color:#d63384;">${data.totalCommission.toFixed(2)}</td>
+            `;
+            reportBody.appendChild(tr);
+        });
+
+        document.getElementById('grandTotalRow').innerHTML = `
+            <td>الإجمالي الكلي</td>
+            <td>${grandTotalCount}</td>
+            <td>${grandTotalAmount.toFixed(2)}</td>
+            <td>${grandTotalCommission.toFixed(2)}</td>
+        `;
+
+        document.getElementById('reportModal').style.display = 'flex';
+    }
+
+    function closeReport() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    function copyReportText() {
+        let text = "*تقرير الشيفت اليومي - نسبة اخدمني*\n\n";
+        const rows = document.querySelectorAll("#reportBody tr");
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('td');
+            text += `🏪 *${cols[0].textContent}*\n`;
+            text += `   - عدد: ${cols[1].textContent} | مبلغ: ${cols[2].textContent} | عمولة: ${cols[3].textContent}\n`;
+        });
+
+        const totalRow = document.getElementById('grandTotalRow').querySelectorAll('td');
+        text += `\n💰 *${totalRow[0].textContent}:* ${totalRow[3].textContent} جنيه`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert("تم النسخ! جاهز للإرسال.");
+        });
     }
 
     window.onload = loadFromLocalStorage;
