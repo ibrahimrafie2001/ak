@@ -20,7 +20,7 @@
     .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
     .form-row .form-group { flex: 1; }
     label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-    input, textarea, select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; font-family: 'Cairo', sans-serif; }
+    input, textarea, select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; font-family: 'Cairo', sans-serif; box-sizing: border-box; }
     
     .btn-group { margin-top: 1rem; display: flex; gap: 10px; flex-wrap: wrap; }
     button { color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 600; transition: 0.3s; }
@@ -53,21 +53,15 @@
     .summary-table th { background-color: #333; } 
     .total-row { font-weight: bold; background-color: #e9ecef; }
 
-    .modal-actions {
-        margin-top: 20px; 
-        display: flex; 
-        gap: 10px; 
-        justify-content: center;
-        flex-wrap: wrap;
-    }
+    .modal-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
-    /* --- تنسيقات الطباعة (عند الضغط على طباعة أو Ctrl+P) --- */
+    /* --- تنسيقات الطباعة --- */
     @media print {
-        body * { visibility: hidden; } /* إخفاء كل شيء */
-        #reportModal, #reportModal * { visibility: visible; } /* إظهار المودال فقط */
+        body * { visibility: hidden; } 
+        #reportModal, #reportModal * { visibility: visible; } 
         #reportModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: none; }
         .modal-content { box-shadow: none; border: none; width: 100%; max-width: 100%; }
-        .modal-actions, .close-modal { display: none !important; } /* إخفاء الأزرار عند الطباعة */
+        .modal-actions, .close-modal { display: none !important; } 
     }
   </style>
 </head>
@@ -76,7 +70,7 @@
   <header>
     <h1>نسبة اخدمني</h1>
     <div class="logo">
-      <img src="490513000_618868401151095_4901961115467337186_n-removebg-preview.png" alt="لوجو اخدمني" />
+      <img src="490513000_618868401151095_4901961115467337186_n-removebg-preview.png" alt="لوجو اخدمني" onerror="this.style.display='none'" />
     </div>
   </header>
 
@@ -85,39 +79,19 @@
       <div class="form-row">
         <div class="form-group">
           <label for="store">اسم المحل</label>
-          <select id="store">
-            <option value="">-- اختر المحل --</option>
-            <option>ابو يوسف</option>
-            <option>العمده</option>
-            <option>مخبوزات الفتح</option>
-            <option>سليم</option>
-            <option>مكس بوم</option>
-            <option>علي كبده</option>
-            <option>ماركت هيثم</option>
-            <option>مجمدات ابو حمزة</option>
-            <option>طيور الصقر</option>
-            <option>الأرزاق بالله</option>
-            <option>حلواني السلام</option>
-            <option>مطعم بشندي</option>
-            <option>اسماك الاسكندرية</option>
-            <option>فلافي</option>
-            <option>ماتيو</option>
-            <option>المعلم سيد وحيد</option>
-            <option>بيتزا حمزه</option>
-            <option>علي مجدي</option>
-            <option>سري</option>
-            <option>المجانين</option>
-            <option>برجر ع الفحم</option>
-            <option>الرشيدي</option>
-            <option>مقلة الطيب</option>
-            <option>حلواني لادورية</option>
-            <option>ماركت عبد العظيم</option>
-            <option>ديعا ال ف القيساريه</option>
-            <option>ام ادهم سمك</option>
-            <option>ماركت هيثم</option>
-            <option>ماركت مينا</option>
-            <option>المعلم حسام للخضراوات</option>
-          </select>
+          <input type="text" id="store" list="storesDataList" placeholder="ابحث أو سيتم استشعاره تلقائياً...">
+          <datalist id="storesDataList">
+            <option value="ابو يوسف"><option value="العمده"><option value="مخبوزات الفتح">
+            <option value="سليم"><option value="مكس بوم"><option value="علي كبده">
+            <option value="ماركت هيثم"><option value="مجمدات ابو حمزة"><option value="طيور الصقر">
+            <option value="الأرزاق بالله"><option value="حلواني السلام"><option value="مطعم بشندي">
+            <option value="اسماك الاسكندرية"><option value="فلافي"><option value="ماتيو">
+            <option value="المعلم سيد وحيد"><option value="بيتزا حمزه"><option value="علي مجدي">
+            <option value="سري"><option value="المجانين"><option value="برجر ع الفحم">
+            <option value="الرشيدي"><option value="مقلة الطيب"><option value="حلواني لادورية">
+            <option value="ماركت عبد العظيم"><option value="ديعا ال ف القيساريه"><option value="ام ادهم سمك">
+            <option value="ماركت مينا"><option value="المعلم حسام للخضراوات">
+          </datalist>
         </div>
 
         <div class="form-group">
@@ -189,6 +163,24 @@
   <script>
     let editingRow = null;
 
+    // --- دالة الاستشعار التلقائي للمحل ---
+    function normalizeArabic(text) {
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase();
+    }
+
+    document.getElementById('order').addEventListener('input', function() {
+        const text = normalizeArabic(this.value);
+        const stores = Array.from(document.querySelectorAll('#storesDataList option')).map(opt => opt.value);
+        
+        for (let store of stores) {
+            if (text.includes(normalizeArabic(store))) {
+                document.getElementById('store').value = store;
+                break;
+            }
+        }
+    });
+    // ------------------------------------
+
     function saveToLocalStorage() {
       const rows = Array.from(document.querySelectorAll("#ordersTable tr"));
       const data = rows.map(row => 
@@ -217,14 +209,14 @@
     }
 
     function addOrder() {
-      const store = document.getElementById('store').value;
+      const store = document.getElementById('store').value.trim();
       const amount = parseFloat(document.getElementById('amount').value) || 0;
       const order = document.getElementById('order').value.trim();
       const commission = 5; 
       const commissionValue = (amount * commission / 100).toFixed(2);
       const orderDate = new Date().toLocaleString('ar-EG');
 
-      if (!store) return alert("اختر اسم المحل أولاً");
+      if (!store) return alert("اختر أو اكتب اسم المحل أولاً");
 
       if (editingRow) {
         const cells = editingRow.querySelectorAll('td');
@@ -261,7 +253,6 @@
       }
     }
 
-    // --- دالة تحميل الشيفت الكامل (Raw Data) ---
     function downloadCSV() {
         const headers = ["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"];
         const rows = [];
@@ -273,28 +264,21 @@
         generateAndDownloadCSV(headers, rows, "shift_full_details.csv");
     }
 
-    // --- دالة تحميل التقرير الملخص (Summary Data) ---
     function downloadSummaryCSV() {
         const headers = ["اسم المحل", "عدد الأوردرات", "إجمالي المبلغ", "إجمالي النسبة"];
         const rows = [];
-        
-        // جلب الصفوف من جدول التقرير
         document.querySelectorAll("#reportBody tr").forEach(r => {
             const cells = r.querySelectorAll('td');
             rows.push(Array.from(cells).map(td => td.textContent));
         });
-        
-        // إضافة صف الإجمالي
         const totalCells = document.querySelectorAll("#grandTotalRow td");
         if(totalCells.length > 0) {
              rows.push(["---","---","---","---"]);
              rows.push(Array.from(totalCells).map(td => td.textContent));
         }
-
         generateAndDownloadCSV(headers, rows, "daily_summary_report.csv");
     }
 
-    // --- دالة مساعدة لإنشاء ملف CSV ---
     function generateAndDownloadCSV(headers, rows, filename) {
         if(rows.length === 0) return alert("لا توجد بيانات للتحميل");
         const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(";")).join("\n");
@@ -307,7 +291,6 @@
         document.body.removeChild(link);
     }
 
-    // --- منطق التقرير والعرض ---
     function showDailyReport() {
         const reportData = {};
         let grandTotalCount = 0;
