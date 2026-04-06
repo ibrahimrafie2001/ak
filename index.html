@@ -25,8 +25,9 @@
     .btn-upload { background-color: #0d6efd; }
     .btn-report { background-color: #17a2b8; }
     .btn-clear { background-color: #dc3545; }
+    .btn-cloud { background-color: #6f42c1; font-size: 1.1rem; } .btn-cloud:hover { background-color: #59339d; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 2rem; background: white; font-family: 'Cairo', sans-serif; }
+    table { width: 100%; border-collapse: collapse; margin-top: 2rem; background: white; font-family: 'Cairo', sans-serif; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
     th, td { padding: 0.75rem; border: 1px solid #ddd; text-align: center; transition: 0.3s;}
     th { background-color: #ff6600; color: white; }
 
@@ -37,20 +38,12 @@
     .summary-table th { background-color: #333; } 
     .total-row { font-weight: bold; background-color: #e9ecef; }
     .modal-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-
-    @media print {
-        body * { visibility: hidden; } 
-        #reportModal, #reportModal * { visibility: visible; } 
-        #reportModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: none; }
-        .modal-content { box-shadow: none; border: none; width: 100%; max-width: 100%; }
-        .modal-actions, .close-modal { display: none !important; } 
-    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>نسبة اخدمني</h1>
+    <h1>نسبة اخدمني - الإدارة المالية</h1>
     <div class="logo"><img src="490513000_618868401151095_4901961115467337186_n-removebg-preview.png" alt="لوجو اخدمني" onerror="this.style.display='none'" /></div>
   </header>
 
@@ -74,7 +67,7 @@
           </datalist>
         </div>
         <div class="form-group">
-          <label for="amount">المبلغ</label>
+          <label for="amount">المبلغ (جنيه)</label>
           <input type="number" id="amount" placeholder="0.00"/>
         </div>
       </div>
@@ -89,7 +82,8 @@
         <input type="file" id="csvUpload" accept=".csv" style="display:none;" onchange="handleFileUpload(event)">
         <button type="button" class="btn-upload" onclick="document.getElementById('csvUpload').click()">رفع شيت الأوردرات 📤</button>
         <button type="button" class="btn-report" onclick="showDailyReport()">📊 التقرير اليومي</button>
-        <button type="button" class="btn-csv" onclick="downloadCSV()">📥 تحميل الشيفت كامل</button>
+        <button type="button" class="btn-csv" onclick="downloadCSV()">📥 تحميل إكسيل</button>
+        <button type="button" class="btn-cloud" onclick="uploadToServer()">☁️ ترحيل للسيرفر (B2B)</button>
         <button type="button" class="btn-clear" onclick="clearAll()">❌ مسح الكل</button>
       </div>
     </form>
@@ -103,7 +97,7 @@
           <th>النسبة</th>
           <th>العمولة</th>
           <th>تاريخ الأوردر</th>
-          <th>تعديل السعر</th>
+          <th>تعديل / حذف</th>
         </tr>
       </thead>
       <tbody id="ordersTable"></tbody>
@@ -123,8 +117,6 @@
       </table>
       <div class="modal-actions">
          <button onclick="copyReportText()" style="background:#25D366;">نسخ واتساب 📱</button>
-         <button onclick="downloadSummaryCSV()" style="background:#0d6efd;">تحميل Excel 📥</button>
-         <button onclick="window.print()" style="background:#6c757d;">طباعة / PDF 🖨️</button>
          <button onclick="closeReport()" style="background:#333;">إغلاق</button>
       </div>
     </div>
@@ -156,12 +148,8 @@
 
     function insertRow(vals) {
         const tr = document.createElement('tr');
-        
-        // لون أصفر للصف لو المبلغ لسه متسعرش
         const rowStyle = vals[1] == "0" || vals[1] == "0.00" ? "background-color: #fff3cd;" : "";
         tr.style = rowStyle;
-        
-        // التعديل الجديد: لون أحمر لخانة المحل لو "غير محدد"
         const storeStyle = vals[0] === 'غير محدد' ? "background-color: #ffcccc; color: #a71d2a; font-weight: bold;" : "";
 
         tr.innerHTML = `
@@ -171,7 +159,10 @@
           <td>${vals[3]}</td>
           <td style="font-weight:bold;">${vals[4]}</td>
           <td style="font-size: 12px; color: #666;">${vals[5]}</td>
-          <td><button onclick="editOrder(this)" style="padding:5px 10px; font-size:12px; background:#444; color:#fff; border:none; border-radius:3px; cursor:pointer;">تعديل ✏️</button></td>
+          <td style="display: flex; gap: 5px; justify-content: center;">
+            <button onclick="editOrder(this)" style="padding:5px 10px; font-size:12px; background:#444; color:#fff; border:none; border-radius:3px; cursor:pointer;">تعديل ✏️</button>
+            <button onclick="deleteOrder(this)" style="padding:5px 10px; font-size:12px; background:#dc3545; color:#fff; border:none; border-radius:3px; cursor:pointer;">حذف 🗑️</button>
+          </td>
         `;
         document.getElementById('ordersTable').appendChild(tr);
     }
@@ -187,20 +178,11 @@
       if (editingRow) {
         const cells = editingRow.querySelectorAll('td');
         cells[0].textContent = store;
-        
-        // تحديث لون خلية المحل بعد التعديل
-        if(store === 'غير محدد') {
-            cells[0].style = "background-color: #ffcccc; color: #a71d2a; font-weight: bold;";
-        } else {
-            cells[0].style = "";
-        }
-
+        cells[0].style = store === 'غير محدد' ? "background-color: #ffcccc; color: #a71d2a; font-weight: bold;" : "";
         cells[1].textContent = amount.toFixed(2);
         cells[2].textContent = order;
         cells[3].textContent = commission + '%';
         cells[4].textContent = commissionValue;
-        
-        // شيل اللون الأصفر التحذيري بعد التعديل (لو السعر اتعدل أو حتى لو فضل 0)
         editingRow.style.backgroundColor = ""; 
         editingRow = null;
         document.getElementById('submitBtn').textContent = 'إضافة الأوردر';
@@ -214,39 +196,32 @@
     function editOrder(btn) {
       const row = btn.closest('tr'); const cells = row.querySelectorAll('td');
       document.getElementById('store').value = cells[0].textContent !== 'غير محدد' ? cells[0].textContent : '';
-      
-      // التعديل السحري هنا: لو السعر 0، خلي الخانة فاضية عشان يكتب على طول
       document.getElementById('amount').value = (cells[1].textContent === '0' || cells[1].textContent === '0.00') ? '' : cells[1].textContent;
-      
       document.getElementById('order').value = cells[2].textContent;
-      
       editingRow = row;
       document.getElementById('submitBtn').textContent = 'حفظ التعديل ✔️';
-      
-      // التركيز على مربع اسم المحل لو كان غير محدد، أو على المبلغ لو كان متسجل
-      if (cells[0].textContent === 'غير محدد') {
-          document.getElementById('store').focus();
-      } else {
-          document.getElementById('amount').focus();
-      }
+      if (cells[0].textContent === 'غير محدد') { document.getElementById('store').focus(); } else { document.getElementById('amount').focus(); }
     }
 
-    function clearAll() {
-      if(confirm('هل أنت متأكد من مسح كل البيانات؟')) { localStorage.removeItem("ordersData"); document.getElementById('ordersTable').innerHTML = ''; }
+    function deleteOrder(btn) {
+        if(confirm('متأكد إنك عاوز تحذف الأوردر ده نهائياً؟')) {
+            const row = btn.closest('tr'); row.remove(); saveToLocalStorage(); 
+            if(editingRow === row) { document.getElementById('orderForm').reset(); editingRow = null; document.getElementById('submitBtn').textContent = 'إضافة الأوردر'; }
+        }
     }
+
+    function clearAll() { if(confirm('متأكد من مسح كل البيانات؟')) { localStorage.removeItem("ordersData"); document.getElementById('ordersTable').innerHTML = ''; } }
 
     function handleFileUpload(event) {
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const text = e.target.result; const rows = text.split("\n").slice(1);
-            let addedCount = 0;
+            const text = e.target.result; const rows = text.split("\n").slice(1); let addedCount = 0;
             rows.forEach(row => {
-                if (row.trim() === "") return;
-                const columns = row.split(";");
+                if (row.trim() === "") return; const columns = row.split(";");
                 if (columns.length >= 6) { insertRow([columns[0], columns[1], columns[2], columns[3], columns[4], columns[5]]); addedCount++; }
             });
-            saveToLocalStorage(); alert(`تم استيراد ${addedCount} أوردر بنجاح! راجع الجدول عشان تسعر وتعدل أسماء المحلات الحمرا.`);
+            saveToLocalStorage(); alert(`تم استيراد ${addedCount} أوردر بنجاح!`);
         };
         reader.readAsText(file); event.target.value = '';
     }
@@ -257,22 +232,10 @@
             const cells = r.querySelectorAll('td'); if (cells.length < 6) return;
             rows.push(Array.from(cells).slice(0,6).map(td => td.textContent));
         });
-        generateAndDownloadCSV(["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"], rows, "shift_full_details.csv");
-    }
-
-    function downloadSummaryCSV() {
-        const rows = [];
-        document.querySelectorAll("#reportBody tr").forEach(r => { rows.push(Array.from(r.querySelectorAll('td')).map(td => td.textContent)); });
-        const totalCells = document.querySelectorAll("#grandTotalRow td");
-        if(totalCells.length > 0) { rows.push(["---","---","---","---"]); rows.push(Array.from(totalCells).map(td => td.textContent)); }
-        generateAndDownloadCSV(["اسم المحل", "عدد الأوردرات", "إجمالي المبلغ", "إجمالي النسبة"], rows, "daily_summary_report.csv");
-    }
-
-    function generateAndDownloadCSV(headers, rows, filename) {
-        if(rows.length === 0) return alert("لا توجد بيانات للتحميل");
-        const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(";")).join("\n");
+        if(rows.length === 0) return alert("لا توجد بيانات");
+        const csvContent = "\uFEFF" + [["اسم المحل","المبلغ","تفاصيل الطلب","النسبة","العمولة","تاريخ الأوردر"], ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename;
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "shift_full_details.csv";
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
@@ -310,6 +273,66 @@
         const totalRow = document.getElementById('grandTotalRow').querySelectorAll('td');
         text += `\n💰 *${totalRow[0].textContent}:* ${totalRow[3].textContent} جنيه`;
         navigator.clipboard.writeText(text).then(() => { alert("تم النسخ! جاهز للإرسال."); });
+    }
+
+    // ==========================================
+    // الدالة السحرية: ترحيل الشغل لهوستنجر ☁️
+    // ==========================================
+    function uploadToServer() {
+        const pass = prompt("أدخل الرقم السري للأدمن لترحيل البيانات للسيرفر:");
+        if (pass !== '333') { alert("كلمة المرور خاطئة!"); return; }
+
+        const rows = document.querySelectorAll("#ordersTable tr");
+        if (rows.length === 0) { alert("الجدول فاضي! مفيش حاجة تترفع."); return; }
+
+        const payload = { password: pass, orders: [] };
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const amount = parseFloat(cells[1].textContent) || 0;
+            const commVal = parseFloat(cells[4].textContent) || 0;
+            
+            payload.orders.push({
+                store_name: cells[0].textContent,
+                amount: amount,
+                details: cells[2].textContent,
+                comm_percent: cells[3].textContent,
+                comm_value: commVal,
+                net: amount - commVal, // الصافي للمحل
+                date: cells[5].textContent
+            });
+        });
+
+        // ⚠️ مهم جداً: غير الرابط ده للينك ملف الـ PHP بتاعك على هوستنجر
+        const serverURL = 'https://3m-ls.com/orders-dash/save_financials.php';
+
+        btn = document.querySelector('.btn-cloud');
+        btn.textContent = 'جاري الرفع... ⏳';
+        btn.disabled = true;
+
+        fetch(serverURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+                // اختياري: لو عاوز تمسح الجدول بعد الرفع شيل السلاش من السطر اللي تحت
+                // clearAll(); 
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حصلت مشكلة في الاتصال بالسيرفر. اتأكد من الرابط أو جرب تاني.');
+        })
+        .finally(() => {
+            btn.textContent = '☁️ ترحيل للسيرفر (B2B)';
+            btn.disabled = false;
+        });
     }
 
     window.onload = loadFromLocalStorage;
